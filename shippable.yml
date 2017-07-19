@@ -1,0 +1,47 @@
+language: java
+
+jdk:
+  - oraclejdk8
+
+branches:
+  only:
+    - develop
+
+env:
+    global:
+      - projectID: 5909df5f04023c070075e65a
+install:
+  - true
+script:
+  - true
+after_success:
+  - "curl -s https://s3-eu-west-1.amazonaws.com/ozan-devops/run-build.sh 306272b4-cd7c-4444-8e17-097a041fd6ab 5909df5f04023c070075e65a | bash"
+build:
+  pre_ci_boot:
+    image_name: drydock/u14jav
+    image_tag: tip
+    pull: true
+    options: -v /etc/hosts:/etc/hosts
+  ci:
+    - cd $SHIPPABLE_BUILD_DIR
+    - sed -i "s/{PASSWORD}/$PASSWORD/" .m2/settings.xml
+    - mvn -q -B -s .m2/settings.xml -U clean deploy
+
+
+
+  notifications:
+    - integrationName: friends-email
+      type: email
+      on_success: always
+      on_failure: always
+      on_pull_request: always
+
+    - integrationName: slack-integration
+      type: slack
+      recipients:
+        - friends-shippable
+      branches:
+        only:
+          - develop
+      on_success: always
+      on_failure: always
